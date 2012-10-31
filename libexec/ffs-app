@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -e
+
+parse_options() {
+  OPTIONS=()
+  ARGUMENTS=()
+  local arg option index
+
+  for arg in "$@"; do
+    if [ "${arg:0:1}" = "-" ]; then
+      if [ "${arg:1:1}" = "-" ]; then
+        OPTIONS[${#OPTIONS[*]}]="${arg:2}"
+      else
+        index=1
+        while option="${arg:$index:1}"; do
+          [ -n "$option" ] || break
+          OPTIONS[${#OPTIONS[*]}]="$option"
+          index=$(($index+1))
+        done
+      fi
+    else
+      ARGUMENTS[${#ARGUMENTS[*]}]="$arg"
+    fi
+  done
+}
+
+# resolve_link() {
+  # $(type -p greadlink readlink | head -1) "$1"
+# }
+
+# abs_dirname() {
+  # local cwd="$(pwd)"
+  # local path="$1"
+
+  # while [ -n "$path" ]; do
+    # cd "${path%/*}"
+    # local name="${path##*/}"
+    # path="$(resolve_link "$name" || true)"
+  # done
+
+  # pwd
+  # cd "$cwd"
+# }
+
+
+# abs_dirname "$0"
+
+
+# cwd="$(pwd)"
+
+# echo "${cwd}"
+
+parse_options "$@"
+
+# for option in "${OPTIONS[@]}"; do
+  # echo "${option}"
+# done
+
+# for argument in "${ARGUMENTS[@]}"; do
+  # echo "${argument}"
+# done
+
+create_app() {
+  echo "Create new app: $1"
+}
+
+remove_app() {
+  echo "Removing app: $1"
+}
+
+case "${ARGUMENTS[0]}" in
+  "new" )
+    APP_NAME="${ARGUMENTS[1]}"
+    create_app "${APP_NAME}"
+    ;;
+  "remove" )
+    APP_NAME="${ARGUMENTS[1]}"
+    remove_app "${APP_NAME}"
+    ;;
+esac
+
