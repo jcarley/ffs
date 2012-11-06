@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Usage: ffs puppet command
+# Summary: Manages the local puppet modules
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo copy
+  echo remove
+  exit
+fi
+
+PUPPET_MODULES_SOURCE="${HOME}/.puppet/modules"
+PUPPET_MODULES_DESTINATION="${PWD}/puppet/modules"
+
+copy_modules() {
+  for argument in "${ARGUMENTS[@]}"; do
+    if [ ! $argument == "copy" ]
+    then
+      MODULE_SOURCE="${PUPPET_MODULES_SOURCE}/${argument}"
+      MODULE_DESTINATION="${PUPPET_MODULES_DESTINATION}/${argument}"
+
+      if [ -d $MODULE_SOURCE ]
+      then
+        echo "Coping module ${MODULE_SOURCE} to ${MODULE_DESTINATION}"
+        cp -R -n ${MODULE_SOURCE} ${MODULE_DESTINATION}
+      else
+        echo "No module found for ${MODULE_SOURCE}"
+      fi
+    fi
+  done
+}
+
+remove_modules() {
+  echo 'remove not implemented yet.'
+  exit 0
+}
+
+parse_options "$@"
+
+command="${ARGUMENTS[0]}"
+
+case $command in
+  "copy" )
+    copy_modules
+    exit 0
+    ;;
+  "remove" )
+    remove_modules
+    exit 0
+    ;;
+esac
+
+
+

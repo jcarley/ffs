@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
 echo $1

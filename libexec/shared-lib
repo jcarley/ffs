@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+parse_options() {
+  OPTIONS=()
+  ARGUMENTS=()
+  local arg option index
+
+  for arg in "$@"; do
+    if [ "${arg:0:1}" = "-" ]; then
+      if [ "${arg:1:1}" = "-" ]; then
+        OPTIONS[${#OPTIONS[*]}]="${arg:2}"
+      else
+        index=1
+        while option="${arg:$index:1}"; do
+          [ -n "$option" ] || break
+          OPTIONS[${#OPTIONS[*]}]="$option"
+          index=$(($index+1))
+        done
+      fi
+    else
+      ARGUMENTS[${#ARGUMENTS[*]}]="$arg"
+    fi
+  done
+}
+
+resolve_link() {
+  $(type -p greadlink readlink | head -1) "$1"
+}
+
+abs_dirname() {
+  local cwd="$(pwd)"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+
+#
+# Resolves any path (even through link-chains etc. to an absolute path.
+#
+# Usage:
+#   MY_COMMAND="$(resolvePath "${0}")"
+#   MY_DIR="$(dirname "${MY_COMMAND}")"
+#
+function resolvePath() {
+  local path="${1}"
+
+  firstTry="$(readlink -f "${path}" 2> /dev/null)"
+  if [ -n "${firstTry}" ]; then
+    echo "${firstTry}"
+  else
+    echo "$(_pwdResolvePath "${path}")"
+  fi
+}
+
+#
+# If readlink is not available on the system the fallback is to use
+# pwd -P and the "cd"-approach to resolve a symbolic link.
+#
+function _pwdResolvePath() {
+  local path="${1}"
+  local cmd dir link
+
+  if [ -d "${path}" ]; then
+    cmd=
+    dir="${path}"
+  else
+    cmd="$(basename "${path}")"
+    dir="$(dirname "${path}")"
+  fi
+
+  cd "$dir"
+
+  if [ ! -d "${path}" ]; then
+    while [ -h "$cmd" ]; do
+      link="$(ls -l "$cmd" | cut -d\> -f2 | cut -c2-)"
+      cmd="$(basename "$link")"
+      dir="$(dirname "$link")"
+      cd "$dir"
+    done
+    cmd="/${cmd}"
+  fi
+
+  echo "$(pwd -P)${cmd}"
+}

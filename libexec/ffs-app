@@ -1,54 +1,19 @@
 #!/usr/bin/env bash
+# Usage: ffs app command
+# Summary: Manages application workflows
 set -e
 
-parse_options() {
-  OPTIONS=()
-  ARGUMENTS=()
-  local arg option index
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
 
-  for arg in "$@"; do
-    if [ "${arg:0:1}" = "-" ]; then
-      if [ "${arg:1:1}" = "-" ]; then
-        OPTIONS[${#OPTIONS[*]}]="${arg:2}"
-      else
-        index=1
-        while option="${arg:$index:1}"; do
-          [ -n "$option" ] || break
-          OPTIONS[${#OPTIONS[*]}]="$option"
-          index=$(($index+1))
-        done
-      fi
-    else
-      ARGUMENTS[${#ARGUMENTS[*]}]="$arg"
-    fi
-  done
-}
-
-# resolve_link() {
-  # $(type -p greadlink readlink | head -1) "$1"
-# }
-
-# abs_dirname() {
-  # local cwd="$(pwd)"
-  # local path="$1"
-
-  # while [ -n "$path" ]; do
-    # cd "${path%/*}"
-    # local name="${path##*/}"
-    # path="$(resolve_link "$name" || true)"
-  # done
-
-  # pwd
-  # cd "$cwd"
-# }
-
-
-# abs_dirname "$0"
-
-
-# cwd="$(pwd)"
-
-# echo "${cwd}"
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo new
+  echo remove
+  echo bundle
+  exit
+fi
 
 parse_options "$@"
 
@@ -68,14 +33,42 @@ remove_app() {
   echo "Removing app: $1"
 }
 
+bundle_app() {
+  if [ ! -e "${PWD}/Vagrantfile" ]
+  then
+    echo "No Vagrantfile found."
+    echo "Must be in a directory with a Vagrantfile."
+    exit 1
+  fi
+
+  required_status='running'
+  current_status=$(vagrant status | grep -i '\(poweroff\|running\|not created\)')
+  if [[ ! $current_status =~ "${required_status}" ]]
+  then
+    echo "Found Vagrantfile."
+    echo "VM is not currently running."
+    echo "Please 'vagrant up' and run 'ffs app bundle' again."
+    exit 1
+  fi
+
+  vagrant ssh -c "cd /vagrant; bundle install --binstubs=bin --path vendor/bundle"
+}
+
 case "${ARGUMENTS[0]}" in
   "new" )
     APP_NAME="${ARGUMENTS[1]}"
     create_app "${APP_NAME}"
+    exit 0
     ;;
   "remove" )
     APP_NAME="${ARGUMENTS[1]}"
     remove_app "${APP_NAME}"
+    exit 0
+    ;;
+  "bundle" )
+    APP_NAME="${ARGUMENTS[1]}"
+    bundle_app "${APP_NAME}"
+    exit 0
     ;;
 esac
 
