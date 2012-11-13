@@ -63,7 +63,7 @@ bundle_app() {
     exit 1
   fi
 
-  vagrant ssh -c "cd /vagrant; bundle install --binstubs=bin --path vendor/bundle"
+  vagrant ssh -c "cd /vagrant; bundle install --binstubs --path vendor/bundle"
 }
 
 case "${ARGUMENTS[0]}" in
