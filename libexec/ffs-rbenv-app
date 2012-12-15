@@ -32,7 +32,6 @@ create_app() {
   gem install rails >/dev/null
 
   echo "creating $1 application"
-  # rails new $1 --skip-active-record --skip-bundle >/dev/null
   rails new $1 -m ~/Projects/Ruby/templates/devise_mongodb.rb -T -O --skip-bundle
 
   echo "adding rbenv specific files to $1 root"
