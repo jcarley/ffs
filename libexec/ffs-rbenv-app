@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Usage: ffs app command
+# Summary: Manages application workflows
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo new
+  echo remove
+  echo bundle
+  exit
+fi
+
+parse_options "$@"
+
+create_app() {
+  local ruby_version=`cat $(rbenv version-file)`
+
+  echo "creating $1 gemset for ruby $ruby_version"
+  rbenv gemset create $ruby_version $1 >/dev/null
+  echo $1 > .rbenv-gemsets
+  rbenv gemset active >/dev/null
+
+  echo "setting ruby to $ruby_version for $1"
+  echo $ruby_version > .rbenv-version
+
+  echo "installing rails into gemset $1"
+  gem install rails >/dev/null
+
+  echo "creating $1 application"
+  # rails new $1 --skip-active-record --skip-bundle >/dev/null
+  rails new $1 -m ~/Projects/Ruby/templates/devise_mongodb.rb -T -O --skip-bundle
+
+  echo "adding rbenv specific files to $1 root"
+  mv .rbenv-gemsets ./$1
+  mv .rbenv-version ./$1
+
+  cd $1
+
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "initializing git repo for $1"
+    git init
+  fi
+}
+
+remove_app() {
+  local ruby_version=`cat $(rbenv version-file)`
+
+  echo "removing app: $1"
+  rbenv gemset delete $ruby_version $1
+  rm -rf $1
+}
+
+bundle_app() {
+  if [ ! -e "${PWD}/Vagrantfile" ]
+  then
+    echo "No Vagrantfile found."
+    echo "Must be in a directory with a Vagrantfile."
+    exit 1
+  fi
+
+  required_status='running'
+  current_status=$(vagrant status | grep -i '\(poweroff\|running\|not created\)')
+  if [[ ! $current_status =~ "${required_status}" ]]
+  then
+    echo "Found Vagrantfile."
+    echo "VM is not currently running."
+    echo "Please 'vagrant up' and run 'ffs app bundle' again."
+    exit 1
+  fi
+
+  vagrant ssh -c "cd /vagrant; bundle install --binstubs --path vendor/bundle"
+}
+
+case "${ARGUMENTS[0]}" in
+  "new" )
+    APP_NAME="${ARGUMENTS[1]}"
+    create_app "${APP_NAME}"
+    exit 0
+    ;;
+  "remove" )
+    APP_NAME="${ARGUMENTS[1]}"
+    remove_app "${APP_NAME}"
+    exit 0
+    ;;
+  "bundle" )
+    APP_NAME="${ARGUMENTS[1]}"
+    bundle_app "${APP_NAME}"
+    exit 0
+    ;;
+esac
+
