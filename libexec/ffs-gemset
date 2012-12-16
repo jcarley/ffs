@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Usage: ffs app command
+# Summary: Manages application workflows
+
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo create
+  echo remove
+  exit
+fi
+
+parse_options "$@"
+
+create_gemset() {
+  local current_dir=`basename $(pwd)`
+  local ruby_version=`cat $(rbenv version-file)`
+
+  echo "setting ruby to $ruby_version for $current_dir"
+  echo $ruby_version > .rbenv-version
+
+  echo "creating $current_dir gemset for ruby $ruby_version"
+  rbenv gemset create $ruby_version $current_dir >/dev/null
+  echo $current_dir > .rbenv-gemsets
+  rbenv gemset active >/dev/null
+
+  if [ ! -e "Gemfile" ]
+  then
+    echo "Creating Gemfile"
+    echo "source :rubygems" > Gemfile
+  else
+    echo "Found Gemfile"
+  fi
+
+  if ! $(gem list | grep bundler)
+  then
+    echo "Installing bundler to gemset $current_dir"
+    gem install bundler >/dev/null
+  fi
+
+}
+
+remove_gemset() {
+  ruby_version=`cat $(rbenv version-file)`
+  gemset=`cat $(rbenv gemset file)`
+
+  echo "removing gemset $gemset from $ruby_version"
+  rbenv gemset delete $ruby_version $gemset >/dev/null
+
+  echo "removing .rbenv-* files from local directory"
+  rm .rbenv-*
+}
+
+case "${ARGUMENTS[0]}" in
+  "create" )
+    GEMSET_NAME="${ARGUMENTS[1]}"
+    create_gemset "${GEMSET_NAME}"
+    exit 0
+    ;;
+  "remove" )
+    remove_gemset
+    exit 0
+    ;;
+esac
+

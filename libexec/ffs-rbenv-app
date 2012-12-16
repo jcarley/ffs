@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ffs app command
 # Summary: Manages application workflows
+
 set -e
 
 path=$0
@@ -11,6 +12,7 @@ source $SCRIPT_ROOT/shared-lib
 if [ "$1" = "--complete" ]; then
   echo new
   echo remove
+  echo gemset
   echo bundle
   exit
 fi
