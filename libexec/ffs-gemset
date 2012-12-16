@@ -37,6 +37,7 @@ create_gemset() {
     echo "Found Gemfile"
   fi
 
+  # Alternatively could use 'rbenv which bundle' to find bundler
   if ! $(gem list | grep bundler)
   then
     echo "Installing bundler to gemset $current_dir"
