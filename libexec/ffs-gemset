@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ffs app command
 # Summary: Manages application workflows
+# Help: See https://gist.github.com/2407918 for more info on using rbenv
 
 set -e
 
