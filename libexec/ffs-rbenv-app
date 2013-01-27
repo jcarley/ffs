@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-# Usage: ffs app command
+# Usage: ffs app <command> [version] [--skip-template]
 # Summary: Manages application workflows
+#
+# Help:
+#  command
+#     new             creates a new application
+#     remove          removes an existing application
+#     bundle          bundles the application inside of a Vagrant VM
+#
+#   version           the version of ruby to use
+#   --skip-template   will skip using our rails-app-composer generated template
 
 set -e
 
@@ -14,13 +23,26 @@ if [ "$1" = "--complete" ]; then
   echo remove
   echo gemset
   echo bundle
+  exec rbenv versions --bare
   exit
 fi
 
-parse_options "$@"
+# ffs rbenv-app new mytestapp --skip-template --version-1.8.7-p302
+
+get_ruby_version() {
+  local ruby_version=`cat $(rbenv version-file)`
+
+  if [ "$1" == "" ]
+  then
+    echo "${ruby_version}"
+  else
+    echo "${1}"
+  fi
+}
 
 create_app() {
-  local ruby_version=`cat $(rbenv version-file)`
+  local ruby_version="$(get_ruby_version $2)"
+  echo "found ruby version: ${ruby_version}"
 
   echo "creating $1 gemset for ruby $ruby_version"
   rbenv gemset create $ruby_version $1 >/dev/null
@@ -33,8 +55,15 @@ create_app() {
   echo "installing rails into gemset $1"
   gem install rails >/dev/null
 
-  echo "creating $1 application"
-  rails new $1 -m ~/Projects/Ruby/templates/default.rb -T -O --skip-bundle
+  if [ "$3" == "" ]
+  then
+    # use our default application template
+    echo "creating $1 application"
+    rails new $1 -m ~/Projects/Ruby/templates/default.rb -T -O --skip-bundle
+  else
+    # don't use our default application template
+    rails new $1 -T -O --skip-bundle
+  fi
 
   echo "adding rbenv specific files to $1 root"
   mv .rbenv-gemsets ./$1
@@ -77,10 +106,12 @@ bundle_app() {
   vagrant ssh -c "cd /vagrant; bundle install --binstubs --path vendor/bundle"
 }
 
+parse_options "$@"
+
 case "${ARGUMENTS[0]}" in
   "new" )
     APP_NAME="${ARGUMENTS[1]}"
-    create_app "${APP_NAME}"
+    create_app "${APP_NAME}" "${ARGUMENTS[2]}" "${OPTIONS[0]}"
     exit 0
     ;;
   "remove" )
@@ -92,6 +123,6 @@ case "${ARGUMENTS[0]}" in
     APP_NAME="${ARGUMENTS[1]}"
     bundle_app "${APP_NAME}"
     exit 0
+
     ;;
 esac
-
