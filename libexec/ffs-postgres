@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Usage: ffs postgres <command>
+# Summary: Manages the postgres database
+#
+# Help:
+#  command
+#     start           starts postgres
+#     stop            stops postgres
+
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo start
+  echo stop
+  echo status
+  echo reload
+  exit
+fi
+
+parse_options "$@"
+
+case "${ARGUMENTS[0]}" in
+  "start" )
+    pg_ctl -D /usr/local/var/postgres -l logfile start
+    exit 0
+    ;;
+  "stop" )
+    pg_ctl -D /usr/local/var/postgres -m smart stop
+    exit 0
+    ;;
+  "status" )
+    pg_ctl -D /usr/local/var/postgres status
+    exit 0
+    ;;
+  "reload" )
+    pg_ctl -D /usr/local/var/postgres reload
+    exit 0
+    ;;
+esac
