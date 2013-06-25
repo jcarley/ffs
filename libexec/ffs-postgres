@@ -30,7 +30,7 @@ case "${ARGUMENTS[0]}" in
     exit 0
     ;;
   "stop" )
-    pg_ctl -D /usr/local/var/postgres -m smart stop
+    pg_ctl -D /usr/local/var/postgres -m fast stop
     exit 0
     ;;
   "status" )
