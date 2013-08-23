@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ffs app <command> [version] [--skip-template]
+# Usage: ffs rbenv-app <command> <app-name> [ruby-version] [--skip-template]
 # Summary: Manages application workflows
 #
 # Help:
@@ -41,47 +41,36 @@ get_ruby_version() {
 }
 
 create_app() {
-  local ruby_version="$(get_ruby_version $2)"
-  echo "found ruby version: ${ruby_version}"
+  # local ruby_version="$(get_ruby_version $2)"
+  # echo "found ruby version: ${ruby_version}"
 
-  echo "creating $1 gemset for ruby $ruby_version"
-  rbenv gemset create $ruby_version $1 >/dev/null
-  echo $1 > .rbenv-gemsets
-  rbenv gemset active >/dev/null
-
-  echo "setting ruby to $ruby_version for $1"
-  echo $ruby_version > .rbenv-version
-
-  echo "installing rails into gemset $1"
-  gem install rails >/dev/null
+  # echo "setting ruby to $ruby_version for $1"
+  # echo $ruby_version > .rbenv-version
 
   if [ "$3" == "" ]
   then
     # use our default application template
     echo "creating $1 application"
-    rails new $1 -m ~/Projects/Ruby/templates/default.rb -T -O --skip-bundle
+    rails new $1 -m ~/Projects/Ruby/templates/ffs_rails_template.rb -T -O --skip-bundle
   else
     # don't use our default application template
     rails new $1 -T -O --skip-bundle
   fi
 
-  echo "adding rbenv specific files to $1 root"
-  mv .rbenv-gemsets ./$1
-  mv .rbenv-version ./$1
-
+  echo "setting ruby version for $1 to $2"
   cd $1
+  rbenv local $2
 
-  if ! git rev-parse --git-dir >/dev/null 2>&1; then
-    echo "initializing git repo for $1"
-    git init
-  fi
+  # if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    # echo "initializing git repo for $1"
+    # git init
+  # fi
 }
 
 remove_app() {
   local ruby_version=`cat $(rbenv version-file)`
 
   echo "removing app: $1"
-  rbenv gemset delete $ruby_version $1
   rm -rf $1
 }
 
