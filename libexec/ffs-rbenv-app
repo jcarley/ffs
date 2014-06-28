@@ -51,7 +51,7 @@ create_app() {
   then
     # use our default application template
     echo "creating $1 application"
-    rails new $1 -m ~/Projects/Ruby/templates/ffs_rails_template.rb -T -O --skip-bundle
+    rails new $1 -m ~/Projects/Ruby/templates/ffs_rails_template.rb -T --database=postgresql --skip-bundle
   else
     # don't use our default application template
     rails new $1 -T -O --skip-bundle
