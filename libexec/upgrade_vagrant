@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -e
+
+VAGRANT_LATEST_VERSION=`curl -s http://www.vagrantup.com/latest-version.json | grep -o '"\d\.\d[^"]*"' | tr -d '"''"'`
+
+key_exit() {
+  echo "Press any key to exit."
+  read
+  exit $1
+}
+
+check_vagrant_version() {
+  if [ ! $(which vagrant) ] || [[ $(vagrant -v | cut -d " " -f2) < $VAGRANT_LATEST_VERSION ]]; then
+    echo "Would you like to install Vagrant ${VAGRANT_LATEST_VERSION} now (Yes/No)?"
+
+    read my_answer
+    my_answer=`echo $my_answer | awk '{print tolower($0)}'`
+    if [ "$my_answer" != "yes" ]; then
+      echo "Aborting install. (answer: ${my_answer})"
+      key_exit 2
+    else
+      echo "The vagrant installer must be run as root."
+      echo "Please enter your sudo password."
+      sudo install_vagrant
+    fi
+  elif [[ $(vagrant -v | cut -d " " -f2) == $VAGRANT_LATEST_VERSION ]]; then
+    echo "Your version of vagrant is the most recent."
+  fi
+}
+
+check_vagrant_version
+

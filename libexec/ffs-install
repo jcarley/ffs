@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Usage: ffs install <package>
+# Summary: Manages development machine dependencies
+#
+# Help:
+#  package
+#     vagrant    - installs the latest version of vagrant
+#     vbox       - installs the latest version of virtual box
+
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# Provide ffs completions
+if [ "$1" = "--complete" ]; then
+  echo vagrant
+  echo vbox
+  exit
+fi
+
+parse_options "$@"
+
+case "${ARGUMENTS[0]}" in
+  "vagrant" )
+    install_vagrant ${OPTIONS[@]}
+    exit 0
+    ;;
+  "vbox" )
+    install_vbox ${OPTIONS[@]}
+    exit 0
+    ;;
+esac

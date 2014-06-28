@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+# "http://dlc.sun.com.edgesuite.net/virtualbox/${VBOX_PACKAGE_VERSION}/VirtualBox-4.3.12-93733-OSX.dmg"
+VBOX_LATEST_VERSION=`curl -s http://dlc.sun.com.edgesuite.net/virtualbox/LATEST.TXT`
+VBOX_PACKAGE_BASE_URL="http://dlc.sun.com.edgesuite.net/virtualbox/${VBOX_LATEST_VERSION}"
+VBOX_PACKAGE=`curl -s ${VBOX_PACKAGE_BASE_URL}/ | grep -o 'HREF="\(VirtualBox-.*-OSX.dmg\)"\s' | tr -d '""' | cut -d '=' -f 2`
+VBOX_PACKAGE_URL="${VBOX_PACKAGE_BASE_URL}/${VBOX_PACKAGE}"
+
+
+check_version() {
+  if [ ! $(which VBoxManage) ] || [[ $(VBoxManage --version) < $VBOX_LATEST_VERSION ]]; then
+    echo "Would you like to install VirtualBox ${VBOX_LATEST_VERSION} now (Yes/No)?"
+
+    read my_answer
+    my_answer=`echo $my_answer | awk '{print tolower($0)}'`
+    if [ "$my_answer" != "yes" ]; then
+      echo "Aborting install. (answer: ${my_answer})"
+      key_exit 2
+    else
+      echo "The VirtualBox installer must be run as root."
+      echo "Please enter your sudo password."
+      sudo run_installer "VirtualBox" "${VBOX_PACKAGE_URL}" "${VBOX_LATEST_VERSION}"
+    fi
+  elif [[ $(VBoxManage --version) == $VBOX_LATEST_VERSION ]]; then
+    echo "Your version of VirtualBox is the most recent."
+  else
+    echo "Unable to determine version for VirtualBox"
+  fi
+}
+
+parse_options "$@"
+
+FORCE=0
+for ARG in "${ARGUMENTS[@]}"; do
+  if [[ "${ARG}" == "force" ]]; then
+    FORCE=1
+  fi
+done
+
+if [ $FORCE == 1 ]; then
+  sudo run_installer "VirtualBox" "${VBOX_PACKAGE_URL}" "${VBOX_LATEST_VERSION}"
+else
+  check_version
+fi
+
+

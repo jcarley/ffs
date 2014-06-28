@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -e
+
+path=$0
+SCRIPT_ROOT="${path%/*}"
+source $SCRIPT_ROOT/shared-lib
+
+VAGRANT_LATEST_VERSION=`curl -s http://www.vagrantup.com/latest-version.json | grep -o '"\d\.\d[^"]*"' | tr -d '"''"'`
+VAGRANT_PACKAGE_URL="https://dl.bintray.com/mitchellh/vagrant/vagrant_${VAGRANT_LATEST_VERSION}.dmg"
+
+check_version() {
+  if [ ! $(which vagrant) ] || [[ $(vagrant -v | cut -d " " -f2) < $VAGRANT_LATEST_VERSION ]]; then
+    echo "Would you like to install Vagrant ${VAGRANT_LATEST_VERSION} now (Yes/No)?"
+
+    read my_answer
+    my_answer=`echo $my_answer | awk '{print tolower($0)}'`
+    if [ "$my_answer" != "yes" ]; then
+      echo "Aborting install. (answer: ${my_answer})"
+      key_exit 2
+    else
+      echo "The vagrant installer must be run as root."
+      echo "Please enter your sudo password."
+      sudo run_installer "Vagrant" "${VAGRANT_PACKAGE_URL}" "${VAGRANT_LATEST_VERSION}"
+    fi
+  elif [[ $(vagrant -v | cut -d " " -f2) == $VAGRANT_LATEST_VERSION ]]; then
+    echo "Your version of vagrant is the most recent."
+  fi
+}
+
+parse_options "$@"
+
+FORCE=0
+for ARG in "${ARGUMENTS[@]}"; do
+  if [[ "${ARG}" == "force" ]]; then
+    FORCE=1
+  fi
+done
+
+if [ $FORCE == 1 ]; then
+  sudo run_installer "Vagrant" "${VAGRANT_PACKAGE_URL}" "${VAGRANT_LATEST_VERSION}"
+else
+  check_version
+fi
