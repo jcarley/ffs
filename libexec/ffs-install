@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Usage: ffs install <package>
+# Usage: ffs install <package> [--force]
 # Summary: Manages development machine dependencies
 #
 # Help:
 #  package
 #     vagrant    - installs the latest version of vagrant
 #     vbox       - installs the latest version of virtual box
+#
+# Options:
+#    --force       - forces the install of the latest version, otherwise does a version check first
+#
 
 set -e
 
